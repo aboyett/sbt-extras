@@ -17,13 +17,15 @@ declare -r latest_28="2.8.2"
 
 declare -r buildProps="project/build.properties"
 
-declare -r sbt_launch_ivy_release_repo="http://repo.typesafe.com/typesafe/ivy-releases"
-declare -r sbt_launch_ivy_snapshot_repo="https://repo.scala-sbt.org/scalasbt/ivy-snapshots"
-declare -r sbt_launch_mvn_release_repo="http://repo.scala-sbt.org/scalasbt/maven-releases"
-declare -r sbt_launch_mvn_snapshot_repo="http://repo.scala-sbt.org/scalasbt/maven-snapshots"
+declare -r sbt_launch_ivy_release_repo="repo.typesafe.com/typesafe/ivy-releases"
+declare -r sbt_launch_ivy_snapshot_repo="repo.scala-sbt.org/scalasbt/ivy-snapshots"
+declare -r sbt_launch_mvn_release_repo="repo.scala-sbt.org/scalasbt/maven-releases"
+declare -r sbt_launch_mvn_snapshot_repo="repo.scala-sbt.org/scalasbt/maven-snapshots"
 
 declare -r default_jvm_opts_common="-Xms512m -Xmx1536m -Xss2m"
 declare -r noshare_opts="-Dsbt.global.base=project/.sbtboot -Dsbt.boot.directory=project/.boot -Dsbt.ivy.home=project/.ivy"
+
+declare url_scheme="https"
 
 declare sbt_jar sbt_dir sbt_create sbt_version sbt_script sbt_new
 declare sbt_explicit_version
@@ -122,7 +124,7 @@ url_base () {
   local version="$1"
 
   case "$version" in
-        0.7.*) echo "http://simple-build-tool.googlecode.com" ;;
+        0.7.*) echo "simple-build-tool.googlecode.com" ;;
       0.10.* ) echo "$sbt_launch_ivy_release_repo" ;;
     0.11.[12]) echo "$sbt_launch_ivy_release_repo" ;;
     0.*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) # ie "*-yyyymmdd-hhMMss"
@@ -137,7 +139,7 @@ url_base () {
 make_url () {
   local version="$1"
 
-  local base="${sbt_launch_repo:-$(url_base "$version")}"
+  local base="${url_scheme}://${sbt_launch_repo:-$(url_base "$version")}"
 
   case "$version" in
         0.7.*) echo "$base/files/sbt-launch-0.7.7.jar" ;;
@@ -313,6 +315,7 @@ runner with the -x option.
   -batch             Disable interactive mode
   -prompt <expr>     Set the sbt prompt; in expr, 's' is the State and 'e' is Extracted
   -script <file>     Run the specified file as a scala script
+  -fetch-insecure    Use http:// instead of https:// when fetching the sbt launcher
 
   # sbt version (default: sbt.version from $buildProps if present, otherwise $sbt_release_version)
   -sbt-force-latest         force the use of the latest release of sbt: $sbt_release_version
@@ -386,6 +389,7 @@ process_args () {
            -prompt) require_arg "expr" "$1" "$2" && setThisBuild shellPrompt "(s => { val e = Project.extract(s) ; $2 })" && shift 2 ;;
            -script) require_arg file "$1" "$2" && sbt_script="$2" && addJava "-Dsbt.main.class=sbt.ScriptMain" && shift 2 ;;
 
+   -fetch-insecure) url_scheme="http" && shift ;;
        -sbt-create) sbt_create=true && shift ;;
           -sbt-jar) require_arg path "$1" "$2" && sbt_jar="$2" && shift 2 ;;
       -sbt-version) require_arg version "$1" "$2" && sbt_explicit_version="$2" && shift 2 ;;
